@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -601,159 +600,297 @@
     </div>
 
     <script>
-    // Инициализация Supabase (ЗАМЕНИТЕ НА СВОИ ДАННЫЕ!)
-    const supabaseUrl = 'https://cfgbmkpoqzufzlxeiqug.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ2Jta3BvcXp1ZnpseGVpcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYzODcsImV4cCI6MjA2OTc0MjM4N30.XphXZSWA3MwrFDISUigXtOwo2HcU4XInpseQexz7cnc';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    $(document).ready(function() {
+        // Форматирование даты
+        const formatDate = (date) => {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
 
-    // Текущая дата
-    const today = new Date();
-    document.getElementById('date').value = today.toISOString().split('T')[0];
+        // Текущая дата и выбранная дата
+        const today = new Date();
+        let selectedDate = new Date();
+        
+        // Установка начальных значений
+        $('#date').val(formatDate(today));
+        updateCurrentDateDisplay();
+        updateSelectedDateDisplay();
+        
+        // Маска для телефона
+        $('#phone').inputmask('+7 (999) 999-99-99');
+        
+        // Загрузка данных
+        let callsData = loadSavedData();
+        renderAllCalls();
+        updateStats();
+        
+        // Инициализация календаря
+        initCalendar();
 
-    // Маска для телефона
-    $('#phone').inputmask('+7 (999) 999-99-99');
-
-    // Основные функции
-    async function addCall(callData) {
-        const { data, error } = await supabase
-            .from('calls')
-            .insert([callData])
-            .select();
-
-        if (error) {
-            alert('Ошибка сохранения: ' + error.message);
-            return false;
+        // Функции работы с данными
+        function loadSavedData() {
+            const savedData = localStorage.getItem('repairCalls');
+            return savedData ? JSON.parse(savedData) : [];
         }
-        return data[0];
-    }
-
-    async function loadCalls() {
-        const { data, error } = await supabase
-            .from('calls')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Ошибка загрузки:', error);
-            return [];
+        
+        function saveDataToLocalStorage() {
+            localStorage.setItem('repairCalls', JSON.stringify(callsData));
+            showNotification('Данные успешно сохранены!', 'success');
+            updateCalendar();
         }
-        return data;
-    }
-
-    async function deleteCall(id) {
-        const { error } = await supabase
-            .from('calls')
-            .delete()
-            .eq('id', id);
-
-        if (error) {
-            alert('Ошибка удаления: ' + error.message);
-            return false;
+        
+        function addCall(date, phone, master, source, works) {
+            const newCall = { date, phone, master, source, works };
+            callsData.unshift(newCall);
+            renderCall(newCall, callsData.length - 1);
+            updateStats();
+            updateCalendar();
         }
-        return true;
-    }
-
-    async function updateTable() {
-        const calls = await loadCalls();
-        const tbody = document.querySelector('#calls-table tbody');
-        tbody.innerHTML = calls.map(call => `
-            <tr>
-                <td>${call.date}</td>
-                <td>${call.phone}</td>
-                <td>${call.master}</td>
-                <td>${call.source}</td>
-                <td>${call.works}</td>
-                <td class="actions-cell">
-                    <button class="action-btn delete-btn" data-id="${call.id}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-
-        // Обновляем статистику
-        document.getElementById('total-calls').textContent = calls.length;
-        document.getElementById('today-calls').textContent = 
-            calls.filter(call => call.date === today.toISOString().split('T')[0]).length;
-    }
-
-    // Режим реального времени
-    function setupRealtime() {
-        supabase
-            .channel('calls-channel')
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'calls'
-            }, () => {
-                updateTable();
-            })
-            .subscribe();
-    }
-
-    // Обработчики событий
-    document.addEventListener('DOMContentLoaded', () => {
-        setupRealtime();
-        updateTable();
-
-        // Обработка формы
-        document.getElementById('call-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        
+        function renderAllCalls() {
+            $('#calls-table tbody').empty();
+            callsData.forEach((call, index) => renderCall(call, index));
+            filterCallsByDate(formatDate(selectedDate));
+        }
+        
+        function renderCall(call, index) {
+            $('#calls-table tbody').prepend(`
+                <tr data-index="${index}">
+                    <td>${call.date}</td>
+                    <td>${call.phone}</td>
+                    <td>${call.master}</td>
+                    <td>${call.source}</td>
+                    <td>${call.works}</td>
+                    <td class="actions-cell">
+                        <button class="action-btn delete-btn" data-index="${index}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+        }
+        
+        function clearForm() {
+            $('#call-form')[0].reset();
+            $('#date').val(formatDate(today));
+            showNotification('Форма очищена', 'info');
+        }
+        
+        function deleteCall(index) {
+            callsData.splice(index, 1);
+            saveDataToLocalStorage();
+            renderAllCalls();
+            updateStats();
+            updateCalendar();
+            showNotification('Запись успешно удалена', 'success');
+        }
+        
+        // Функции статистики
+        function updateStats() {
+            const todayStr = formatDate(today);
+            const selectedDateStr = formatDate(selectedDate);
             
-            const callData = {
-                date: document.getElementById('date').value,
-                phone: document.getElementById('phone').value,
-                master: document.getElementById('master').value,
-                source: document.getElementById('source').value,
-                works: document.getElementById('works').value
-            };
-
-            const result = await addCall(callData);
-            if (result) {
-                e.target.reset();
-                document.getElementById('date').value = today.toISOString().split('T')[0];
+            const todayCalls = callsData.filter(call => call.date === todayStr).length;
+            const selectedDateCalls = callsData.filter(call => call.date === selectedDateStr).length;
+            
+            $('#today-calls').text(todayCalls);
+            $('#total-calls').text(callsData.length);
+            $('#selected-date').text(selectedDateStr === formatDate(today) ? 'сегодня' : selectedDateStr);
+        }
+        
+        function updateCurrentDateDisplay() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            $('#current-date').text(today.toLocaleDateString('ru-RU', options));
+        }
+        
+        function updateSelectedDateDisplay() {
+            const selectedDateStr = formatDate(selectedDate);
+            $('#selected-date').text(selectedDateStr === formatDate(today) ? 'сегодня' : selectedDateStr);
+        }
+        
+        // Функции календаря
+        function initCalendar() {
+            renderCalendar();
+            updateCalendar();
+        }
+        
+        function renderCalendar() {
+            const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+                              "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+            const currentMonth = selectedDate.getMonth();
+            const currentYear = selectedDate.getFullYear();
+            
+            $('#current-month').text(`${monthNames[currentMonth]} ${currentYear}`);
+            
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+            
+            let calendarHTML = '';
+            
+            // Пустые ячейки перед первым днем месяца
+            for (let i = 0; i < startDay; i++) {
+                calendarHTML += '<div class="calendar-day"></div>';
+            }
+            
+            // Дни месяца
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDate = new Date(currentYear, currentMonth, i);
+                const dateStr = formatDate(dayDate);
+                const isToday = dateStr === formatDate(today);
+                const isSelected = dateStr === formatDate(selectedDate);
+                const hasData = callsData.some(call => call.date === dateStr);
+                
+                let dayClass = 'calendar-day';
+                if (isToday) dayClass += ' today';
+                if (hasData) dayClass += ' has-data';
+                if (isSelected) dayClass += ' selected';
+                
+                calendarHTML += `<div class="${dayClass}" data-date="${dateStr}">${i}</div>`;
+            }
+            
+            $('#calendar-days').html(calendarHTML);
+            
+            // Обработка кликов по дням
+            $('.calendar-day[data-date]').click(function() {
+                const dateStr = $(this).data('date');
+                selectedDate = new Date(dateStr);
+                updateSelectedDateDisplay();
+                filterCallsByDate(dateStr);
+                renderCalendar();
+            });
+        }
+        
+        function updateCalendar() {
+            const datesWithData = [...new Set(callsData.map(call => call.date))];
+            $('.calendar-day').each(function() {
+                const dateStr = $(this).data('date');
+                $(this).toggleClass('has-data', datesWithData.includes(dateStr));
+            });
+        }
+        
+        function filterCallsByDate(dateStr) {
+            $('#calls-table tbody tr').each(function() {
+                const rowDate = $(this).find('td:first').text();
+                $(this).toggle(rowDate === dateStr);
+            });
+            updateStats();
+        }
+        
+        // Модальное окно сохранения
+        $('#save-data').click(function() {
+            $('#save-modal').addClass('active');
+        });
+        
+        $('#cancel-save').click(function() {
+            $('#save-modal').removeClass('active');
+            showNotification('Сохранение отменено', 'warning');
+        });
+        
+        $('#confirm-save').click(function() {
+            saveDataToLocalStorage();
+            $('#save-modal').removeClass('active');
+        });
+        
+        $('#save-modal').click(function(e) {
+            if (e.target === this) {
+                $(this).removeClass('active');
             }
         });
-
+        
         // Очистка формы
-        document.getElementById('clear-form').addEventListener('click', () => {
-            document.getElementById('call-form').reset();
-            document.getElementById('date').value = today.toISOString().split('T')[0];
+        $('#clear-form').click(function() {
+            clearForm();
         });
-
-        // Удаление записи
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('.delete-btn')) {
-                const id = e.target.closest('.delete-btn').dataset.id;
-                if (confirm('Удалить эту запись?')) {
-                    await deleteCall(id);
-                }
+        
+        // Удаление записей
+        let callToDelete = null;
+        
+        $(document).on('click', '.delete-btn', function() {
+            callToDelete = $(this).data('index');
+            $('#delete-modal').addClass('active');
+        });
+        
+        $('#cancel-delete').click(function() {
+            $('#delete-modal').removeClass('active');
+            callToDelete = null;
+            showNotification('Удаление отменено', 'warning');
+        });
+        
+        $('#confirm-delete').click(function() {
+            if (callToDelete !== null) {
+                deleteCall(callToDelete);
+                $('#delete-modal').removeClass('active');
+                callToDelete = null;
             }
         });
-
+        
+        $('#delete-modal').click(function(e) {
+            if (e.target === this) {
+                $(this).removeClass('active');
+                callToDelete = null;
+            }
+        });
+        
         // Экспорт в Excel
-        document.getElementById('export-excel').addEventListener('click', async () => {
-            const calls = await loadCalls();
-            if (calls.length === 0) {
-                alert('Нет данных для экспорта');
+        $('#export-excel').click(function() {
+            if (callsData.length === 0) {
+                showNotification('Нет данных для экспорта', 'danger');
                 return;
             }
-
-            const ws = XLSX.utils.json_to_sheet(calls);
+            
             const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(callsData);
             XLSX.utils.book_append_sheet(wb, ws, 'Вызовы');
-            XLSX.writeFile(wb, `Вызовы_${today.toISOString().split('T')[0]}.xlsx`);
+            
+            const dateStr = formatDate(today);
+            XLSX.writeFile(wb, `Вызовы_мастеров_${dateStr}.xlsx`);
+            
+            showNotification('Экспорт в Excel выполнен', 'success');
         });
-    });
-
-    // Навигация по месяцам (календарь)
-    document.getElementById('prev-month').addEventListener('click', () => {
-        // Ваш код для переключения месяца
-    });
-
-    document.getElementById('next-month').addEventListener('click', () => {
-        // Ваш код для переключения месяца
+        
+        // Обработка формы
+        $('#call-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            const date = $('#date').val();
+            const phone = $('#phone').val();
+            const master = $('#master').val();
+            const source = $('#source').val();
+            const works = $('#works').val();
+            
+            if (!phone || !works) {
+                showNotification('Заполните все обязательные поля', 'danger');
+                return;
+            }
+            
+            addCall(date, phone, master, source, works);
+            $(this).trigger('reset');
+            $('#date').val(formatDate(today));
+            showNotification('Вызов успешно добавлен', 'success');
+        });
+        
+        // Навигация по месяцам
+        $('#prev-month').click(function() {
+            selectedDate.setMonth(selectedDate.getMonth() - 1);
+            renderCalendar();
+        });
+        
+        $('#next-month').click(function() {
+            selectedDate.setMonth(selectedDate.getMonth() + 1);
+            renderCalendar();
+        });
+        
+        // Вспомогательные функции
+        function showNotification(message, type) {
+            console.log(`[${type}] ${message}`);
+        }
     });
     </script>
 </body>
 </html>
+
