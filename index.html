@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -37,9 +38,76 @@
             line-height: 1.6;
         }
 
+        /* Стили для модального окна авторизации */
+        #auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #auth-modal .modal {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #auth-modal .form-group {
+            margin-bottom: 1rem;
+        }
+
+        #auth-modal label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        #auth-modal input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        #auth-modal button {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        #auth-modal .links {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        #auth-modal .links a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        #auth-modal .error {
+            color: var(--danger);
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        /* Основные стили приложения */
         .app-container {
             display: flex;
             min-height: 100vh;
+            display: none; /* Сначала скрыто, показывается после авторизации */
         }
 
         .sidebar {
@@ -433,6 +501,34 @@
     </style>
 </head>
 <body>
+    <!-- Модальное окно авторизации -->
+    <div id="auth-modal" class="modal-overlay active">
+        <div class="modal">
+            <div class="modal-title">
+                <i class="fas fa-user-lock"></i> Вход в систему
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Пароль</label>
+                    <input type="password" id="login-password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+                <div class="links" style="margin-top: 1rem; text-align: center;">
+                    <a href="#" id="reset-password">Забыли пароль?</a> | 
+                    <a href="#" id="signup-link">Регистрация</a>
+                </div>
+                <div id="auth-error" class="error-message" style="color: var(--danger); margin-top: 1rem; display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Основное приложение (скрыто до авторизации) -->
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -472,6 +568,10 @@
             <header class="header">
                 <h1 class="page-title">Журнал вызовов</h1>
                 <div id="current-date" style="color: var(--gray);"></div>
+                <button id="logout-btn" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Выход</span>
+                </button>
             </header>
             
             <div class="stats-cards">
@@ -600,7 +700,28 @@
     </div>
 
     <script>
-    $(document).ready(function() {
+    // Инициализация Supabase (ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ)
+    const supabaseUrl = 'https://ВАШ-PROJECT-ID.supabase.co';
+    const supabaseKey = 'ВАШ-ANON-KEY';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Проверка авторизации при загрузке
+    async function checkAuth() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            // Пользователь авторизован - показываем приложение
+            $('.app-container').show();
+            $('#auth-modal').hide();
+            initApp();
+        } else {
+            // Пользователь не авторизован - показываем форму входа
+            $('.app-container').hide();
+            $('#auth-modal').show();
+        }
+    }
+
+    // Инициализация основного приложения
+    function initApp() {
         // Форматирование даты
         const formatDate = (date) => {
             const d = new Date(date);
@@ -889,8 +1010,79 @@
         function showNotification(message, type) {
             console.log(`[${type}] ${message}`);
         }
+    }
+
+    // Обработка формы входа
+    $('#login-form').on('submit', async function(e) {
+        e.preventDefault();
+        const email = $('#login-email').val();
+        const password = $('#login-password').val();
+        
+        $('#auth-error').hide();
+        
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            $('#auth-error').text(error.message).show();
+        } else {
+            checkAuth(); // Обновляем состояние
+        }
+    });
+
+    // Сброс пароля
+    $('#reset-password').click(async function(e) {
+        e.preventDefault();
+        const email = prompt("Введите ваш email для сброса пароля:");
+        if (email) {
+            const { error } = await supabase.auth.resetPasswordForEmail(email);
+            if (error) {
+                alert('Ошибка: ' + error.message);
+            } else {
+                alert('Письмо для сброса пароля отправлено! Проверьте ваш email.');
+            }
+        }
+    });
+
+    // Регистрация нового пользователя
+    $('#signup-link').click(async function(e) {
+        e.preventDefault();
+        const email = prompt("Введите email для регистрации:");
+        const password = prompt("Введите пароль:");
+        
+        if (email && password) {
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password
+            });
+            
+            if (error) {
+                alert('Ошибка регистрации: ' + error.message);
+            } else {
+                alert('Подтвердите email! Письмо отправлено.');
+            }
+        }
+    });
+
+    // Выход из системы
+    $('#logout-btn').click(async function() {
+        await supabase.auth.signOut();
+        checkAuth();
+    });
+
+    // Проверяем авторизацию при загрузке страницы
+    $(document).ready(function() {
+        checkAuth();
+        
+        // Следим за изменениями состояния авторизации
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                checkAuth();
+            }
+        });
     });
     </script>
 </body>
 </html>
-
