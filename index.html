@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
-    <!-- Добавляем Firebase JS SDK -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <style>
@@ -40,35 +40,35 @@
             line-height: 1.6;
         }
 
-        /* Добавляем стили для экрана входа */
+        /* Стили для экрана входа */
         .login-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
             z-index: 10000;
+            flex-direction: column;
             color: white;
         }
 
         .login-box {
             background: var(--white);
-            padding: 40px;
+            padding: 2rem;
             border-radius: 10px;
             text-align: center;
-            color: var(--dark);
-            max-width: 400px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             width: 90%;
+            max-width: 400px;
         }
 
         .login-title {
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
             color: var(--primary);
         }
 
@@ -78,25 +78,25 @@
             border: none;
             padding: 12px 25px;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 1rem;
             cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 1rem;
             display: inline-flex;
             align-items: center;
-            margin-top: 20px;
-            transition: background 0.3s;
-        }
-
-        .login-btn:hover {
-            background: var(--secondary);
         }
 
         .login-btn i {
             margin-right: 10px;
         }
 
-        /* Остальные ваши стили остаются без изменений */
+        .login-btn:hover {
+            background: var(--secondary);
+        }
+
+        /* Основные стили интерфейса */
         .app-container {
-            display: none; /* Сначала скрываем интерфейс */
+            display: flex;
             min-height: 100vh;
         }
 
@@ -108,16 +108,47 @@
             box-shadow: 2px 0 15px rgba(0,0,0,0.1);
         }
 
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .logo i {
+            margin-right: 10px;
+            color: var(--accent);
+        }
+
         /* ... (остальные ваши стили остаются без изменений) ... */
 
+        /* Адаптация для мобильных */
+        @media (max-width: 992px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Экран входа (показывается первым) -->
+    <!-- Экран входа -->
     <div class="login-overlay" id="loginOverlay">
         <div class="login-box">
-            <h1 class="login-title">ServiceMaster</h1>
-            <p>Для работы с системой требуется авторизация</p>
+            <h1 class="login-title">
+                <i class="fas fa-tools"></i> ServiceMaster
+            </h1>
+            <p>Для доступа к системе требуется авторизация</p>
             <button class="login-btn" id="googleLoginBtn">
                 <i class="fab fa-google"></i> Войти через Google
             </button>
@@ -125,7 +156,7 @@
     </div>
 
     <!-- Основной интерфейс (изначально скрыт) -->
-    <div class="app-container" id="appContainer">
+    <div class="app-container" id="appContainer" style="display:none;">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -169,16 +200,28 @@
                 </button>
             </header>
             
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="title">Вызовов сегодня</div>
+                    <div class="value" id="today-calls">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="title">Выбрана дата</div>
+                    <div class="value" id="selected-date">сегодня</div>
+                </div>
+                <div class="stat-card">
+                    <div class="title">Всего записей</div>
+                    <div class="value" id="total-calls">0</div>
+                </div>
+            </div>
+            
             <!-- Остальная часть вашего интерфейса ... -->
-            <!-- (ваш существующий HTML остается без изменений) -->
             
         </main>
     </div>
 
-    <!-- Ваши модальные окна (остаются без изменений) -->
-
     <script>
-        // Инициализация Firebase
+        // Конфигурация Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCsDuOxl4EUy_MMdJKrddmb47KOXfpsrxg",
             authDomain: "masterlilpipka.firebaseapp.com",
@@ -189,32 +232,15 @@
             measurementId: "G-HNFRTWCMTE"
         };
 
-        // Инициализируем Firebase
+        // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const provider = new firebase.auth.GoogleAuthProvider();
 
-        // Проверка состояния аутентификации
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // Пользователь авторизован
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('appContainer').style.display = 'flex';
-                console.log("Пользователь вошел:", user.email);
-                
-                // Здесь можно добавить логику после успешного входа
-                // Например, загрузить данные пользователя
-            } else {
-                // Пользователь не авторизован
-                document.getElementById('loginOverlay').style.display = 'flex';
-                document.getElementById('appContainer').style.display = 'none';
-            }
-        });
-
-        // Обработчик кнопки входа через Google
+        // Обработчик входа
         document.getElementById('googleLoginBtn').addEventListener('click', () => {
             auth.signInWithPopup(provider)
-                .catch((error) => {
+                .catch(error => {
                     console.error("Ошибка входа:", error);
                     alert("Ошибка входа: " + error.message);
                 });
@@ -223,28 +249,71 @@
         // Функция выхода
         function logout() {
             auth.signOut()
-                .then(() => {
-                    alert("Вы успешно вышли из системы!");
-                })
-                .catch((error) => {
-                    console.error("Ошибка выхода:", error);
-                });
+                .then(() => alert("Вы успешно вышли из системы!"))
+                .catch(error => console.error("Ошибка выхода:", error));
         }
 
-        // Ваш существующий JavaScript код
-        $(document).ready(function() {
-            // Форматирование даты
-            const formatDate = (date) => {
-                const d = new Date(date);
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            };
-
-            // Остальной ваш код...
-            // (весь ваш существующий JavaScript остается без изменений)
+        // Проверка состояния аутентификации
+        auth.onAuthStateChanged(user => {
+            const loginOverlay = document.getElementById('loginOverlay');
+            const appContainer = document.getElementById('appContainer');
+            
+            if (user) {
+                // Пользователь авторизован
+                loginOverlay.style.display = 'none';
+                appContainer.style.display = 'flex';
+                
+                // Инициализация основного функционала
+                initApp();
+            } else {
+                // Пользователь не авторизован
+                loginOverlay.style.display = 'flex';
+                appContainer.style.display = 'none';
+            }
         });
+
+        // Инициализация основного приложения
+        function initApp() {
+            // Ваш существующий JavaScript код
+            $(document).ready(function() {
+                // Форматирование даты
+                const formatDate = (date) => {
+                    const d = new Date(date);
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                // Текущая дата и выбранная дата
+                const today = new Date();
+                let selectedDate = new Date();
+                
+                // Установка начальных значений
+                $('#date').val(formatDate(today));
+                updateCurrentDateDisplay();
+                updateSelectedDateDisplay();
+                
+                // Маска для телефона
+                $('#phone').inputmask('+7 (999) 999-99-99');
+                
+                // Загрузка данных
+                let callsData = loadSavedData();
+                renderAllCalls();
+                updateStats();
+                
+                // Инициализация календаря
+                initCalendar();
+
+                // Функции работы с данными
+                function loadSavedData() {
+                    const savedData = localStorage.getItem('repairCalls');
+                    return savedData ? JSON.parse(savedData) : [];
+                }
+                
+                // ... (остальной ваш JavaScript код) ...
+            });
+        }
     </script>
 </body>
 </html>
