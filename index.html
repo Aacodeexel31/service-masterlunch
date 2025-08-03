@@ -129,7 +129,7 @@
         .app-container {
             display: flex;
             min-height: 100vh;
-            display: none; /* Сначала скрыто, показывается после авторизации */
+            display: none;
         }
 
         .sidebar {
@@ -574,7 +574,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно регистрации (изначально скрыто) -->
+    <!-- Модальное окно регистрации -->
     <div id="register-modal" class="auth-modal" style="display: none;">
         <div class="modal-content">
             <h2><i class="fas fa-user-plus"></i> Регистрация</h2>
@@ -598,7 +598,7 @@
         </div>
     </div>
 
-    <!-- Основное приложение (скрыто до авторизации) -->
+    <!-- Основное приложение -->
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -770,7 +770,7 @@
     </div>
 
     <script>
-    // Инициализация Supabase (ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ)
+    // Инициализация Supabase
     const supabaseUrl = 'https://cfgbmkpoqzufzlxeiqug.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ2Jta3BvcXp1ZnpseGVpcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYzODcsImV4cCI6MjA2OTc0MjM4N30.XphXZSWA3MwrFDISUigXtOwo2HcU4XInpseQexz7cnc';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -778,34 +778,50 @@
     // Глобальные переменные
     let callsData = [];
     let selectedDate = new Date();
+    let callToDelete = null;
 
     // Проверка авторизации при загрузке
     async function checkAuth() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            // Пользователь авторизован
-            $('.app-container').show();
-            $('#auth-modal').hide();
-            $('#register-modal').hide();
-            initApp();
-        } else {
-            // Пользователь не авторизован
-            $('.app-container').hide();
-            $('#auth-modal').show();
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            
+            if (error) {
+                console.error('Ошибка проверки авторизации:', error);
+                showAuthScreen();
+                return;
+            }
+
+            if (user) {
+                $('.app-container').show();
+                $('#auth-modal').hide();
+                $('#register-modal').hide();
+                initApp();
+            } else {
+                showAuthScreen();
+            }
+        } catch (err) {
+            console.error('Ошибка при проверке авторизации:', err);
+            showAuthScreen();
         }
+    }
+
+    function showAuthScreen() {
+        $('.app-container').hide();
+        $('#auth-modal').show();
+        $('#register-modal').hide();
+    }
+
+    // Форматирование даты
+    function formatDate(date) {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     // Инициализация основного приложения
     function initApp() {
-        // Форматирование даты
-        const formatDate = (date) => {
-            const d = new Date(date);
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-
         // Текущая дата
         const today = new Date();
         
@@ -979,14 +995,6 @@
     }
     
     // Вспомогательные функции
-    function formatDate(date) {
-        const d = new Date(date);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
     function showNotification(message, type) {
         console.log(`[${type}] ${message}`);
         // Здесь можно добавить отображение уведомлений в интерфейсе
@@ -1005,15 +1013,22 @@
             
             $('#auth-error').hide().text('');
             
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
 
-            if (error) {
-                $('#auth-error').text(error.message).show();
-            } else {
+                if (error) {
+                    $('#auth-error').text(error.message).show();
+                    return;
+                }
+
+                // Успешный вход
                 checkAuth();
+            } catch (err) {
+                console.error('Ошибка входа:', err);
+                $('#auth-error').text('Произошла ошибка при входе').show();
             }
         });
 
@@ -1041,17 +1056,23 @@
             
             $('#register-error').hide().text('');
             
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password
-            });
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
 
-            if (error) {
-                $('#register-error').text(error.message).show();
-            } else {
+                if (error) {
+                    $('#register-error').text(error.message).show();
+                    return;
+                }
+
                 alert('Регистрация успешна! Проверьте ваш email для подтверждения.');
                 $('#register-modal').hide();
                 $('#auth-modal').show();
+            } catch (err) {
+                console.error('Ошибка регистрации:', err);
+                $('#register-error').text('Произошла ошибка при регистрации').show();
             }
         });
 
@@ -1061,11 +1082,16 @@
             const email = $('#login-email').val() || prompt("Введите ваш email:");
             
             if (email) {
-                const { error } = await supabase.auth.resetPasswordForEmail(email);
-                if (error) {
-                    alert('Ошибка: ' + error.message);
-                } else {
-                    alert('Письмо для сброса пароля отправлено! Проверьте ваш email.');
+                try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email);
+                    if (error) {
+                        alert('Ошибка: ' + error.message);
+                    } else {
+                        alert('Письмо для сброса пароля отправлено! Проверьте ваш email.');
+                    }
+                } catch (err) {
+                    console.error('Ошибка сброса пароля:', err);
+                    alert('Произошла ошибка при сбросе пароля');
                 }
             }
         });
@@ -1073,8 +1099,15 @@
         // Выход из системы
         $('#logout-btn').click(async function(e) {
             e.preventDefault();
-            await supabase.auth.signOut();
-            checkAuth();
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    console.error('Ошибка выхода:', error);
+                }
+                checkAuth();
+            } catch (err) {
+                console.error('Ошибка при выходе:', err);
+            }
         });
 
         // Модальное окно сохранения
@@ -1104,8 +1137,6 @@
         });
         
         // Удаление записей
-        let callToDelete = null;
-        
         $(document).on('click', '.delete-btn', function() {
             callToDelete = $(this).data('index');
             $('#delete-modal').addClass('active');
@@ -1183,11 +1214,8 @@
 
         // Следим за изменениями состояния авторизации
         supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN') {
-                checkAuth();
-            } else if (event === 'SIGNED_OUT') {
-                checkAuth();
-            }
+            console.log('Auth state changed:', event);
+            checkAuth();
         });
     });
     </script>
