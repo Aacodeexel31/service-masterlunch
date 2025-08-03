@@ -38,8 +38,8 @@
             line-height: 1.6;
         }
 
-        /* Стили для модального окна авторизации */
-        #auth-modal {
+        /* Стили для модальных окон авторизации */
+        .auth-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -52,55 +52,77 @@
             z-index: 1000;
         }
 
-        #auth-modal .modal {
+        .auth-modal .modal-content {
             background: white;
             padding: 2rem;
             border-radius: 10px;
             width: 100%;
             max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        #auth-modal .form-group {
+        .auth-modal h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .auth-modal .form-group {
             margin-bottom: 1rem;
         }
 
-        #auth-modal label {
+        .auth-modal label {
             display: block;
             margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
-        #auth-modal input {
+        .auth-modal input {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ddd;
             border-radius: 5px;
+            font-size: 1rem;
         }
 
-        #auth-modal button {
+        .auth-modal button {
             width: 100%;
             padding: 0.75rem;
             background: var(--primary);
             color: white;
             border: none;
             border-radius: 5px;
+            font-size: 1rem;
             cursor: pointer;
             margin-top: 1rem;
+            transition: background 0.3s;
         }
 
-        #auth-modal .links {
+        .auth-modal button:hover {
+            background: var(--secondary);
+        }
+
+        .auth-modal .links {
             margin-top: 1rem;
             text-align: center;
         }
 
-        #auth-modal .links a {
+        .auth-modal .links a {
             color: var(--primary);
             text-decoration: none;
+            cursor: pointer;
+            transition: color 0.3s;
         }
 
-        #auth-modal .error {
+        .auth-modal .links a:hover {
+            color: var(--secondary);
+        }
+
+        .auth-modal .error {
             color: var(--danger);
             margin-top: 1rem;
             text-align: center;
+            display: none;
         }
 
         /* Основные стили приложения */
@@ -319,6 +341,7 @@
             font-weight: 500;
             cursor: pointer;
             border: none;
+            transition: background 0.3s;
         }
 
         .btn i {
@@ -330,9 +353,17 @@
             color: var(--white);
         }
 
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+
         .btn-success {
             background: var(--success);
             color: var(--white);
+        }
+
+        .btn-success:hover {
+            background: #3ab5d8;
         }
 
         .btn-warning {
@@ -340,9 +371,17 @@
             color: var(--white);
         }
 
+        .btn-warning:hover {
+            background: #e68a1a;
+        }
+
         .btn-danger {
             background: var(--danger);
             color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #e51775;
         }
 
         .button-group {
@@ -454,6 +493,7 @@
             font-weight: 500;
             cursor: pointer;
             border: none;
+            transition: background 0.3s;
         }
 
         .modal-btn-cancel {
@@ -461,9 +501,17 @@
             color: var(--gray);
         }
 
+        .modal-btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
         .modal-btn-confirm {
             background: var(--primary);
             color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background: var(--secondary);
         }
 
         @media (max-width: 992px) {
@@ -502,28 +550,50 @@
 </head>
 <body>
     <!-- Модальное окно авторизации -->
-    <div id="auth-modal" class="modal-overlay active">
-        <div class="modal">
-            <div class="modal-title">
-                <i class="fas fa-user-lock"></i> Вход в систему
-            </div>
+    <div id="auth-modal" class="auth-modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-user-lock"></i> Вход в систему</h2>
             <form id="login-form">
                 <div class="form-group">
                     <label for="login-email">Email</label>
-                    <input type="email" id="login-email" class="form-control" required>
+                    <input type="email" id="login-email" required>
                 </div>
                 <div class="form-group">
                     <label for="login-password">Пароль</label>
-                    <input type="password" id="login-password" class="form-control" required>
+                    <input type="password" id="login-password" required>
                 </div>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn-primary">
                     <i class="fas fa-sign-in-alt"></i> Войти
                 </button>
-                <div class="links" style="margin-top: 1rem; text-align: center;">
-                    <a href="#" id="reset-password">Забыли пароль?</a> | 
-                    <a href="#" id="signup-link">Регистрация</a>
+                <div class="links">
+                    <a id="reset-password">Забыли пароль?</a> | 
+                    <a id="signup-link">Регистрация</a>
                 </div>
-                <div id="auth-error" class="error-message" style="color: var(--danger); margin-top: 1rem; display: none;"></div>
+                <div id="auth-error" class="error"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации (изначально скрыто) -->
+    <div id="register-modal" class="auth-modal" style="display: none;">
+        <div class="modal-content">
+            <h2><i class="fas fa-user-plus"></i> Регистрация</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Пароль (минимум 6 символов)</label>
+                    <input type="password" id="register-password" minlength="6" required>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-user-plus"></i> Зарегистрироваться
+                </button>
+                <div class="links">
+                    <a id="back-to-login">Назад к входу</a>
+                </div>
+                <div id="register-error" class="error"></div>
             </form>
         </div>
     </div>
@@ -702,19 +772,24 @@
     <script>
     // Инициализация Supabase (ЗАМЕНИТЕ ЭТИ ЗНАЧЕНИЯ)
     const supabaseUrl = 'https://cfgbmkpoqzufzlxeiqug.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ2Jta3BvcXp1ZnpseGVpcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYzODcsImV4cCI6MjA2OTc0MjM4N30.XphXZSWA3MwrFDISUigXtOwo2HcU4XInpseQexz7cnc';
+    const supabaseKey = 'sb_publishable_AFfNUPGAEygAvEVltNojaA_VcXMw-X7';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Глобальные переменные
+    let callsData = [];
+    let selectedDate = new Date();
 
     // Проверка авторизации при загрузке
     async function checkAuth() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            // Пользователь авторизован - показываем приложение
+            // Пользователь авторизован
             $('.app-container').show();
             $('#auth-modal').hide();
+            $('#register-modal').hide();
             initApp();
         } else {
-            // Пользователь не авторизован - показываем форму входа
+            // Пользователь не авторизован
             $('.app-container').hide();
             $('#auth-modal').show();
         }
@@ -731,9 +806,8 @@
             return `${year}-${month}-${day}`;
         };
 
-        // Текущая дата и выбранная дата
+        // Текущая дата
         const today = new Date();
-        let selectedDate = new Date();
         
         // Установка начальных значений
         $('#date').val(formatDate(today));
@@ -744,164 +818,265 @@
         $('#phone').inputmask('+7 (999) 999-99-99');
         
         // Загрузка данных
-        let callsData = loadSavedData();
+        callsData = loadSavedData();
         renderAllCalls();
         updateStats();
         
         // Инициализация календаря
         initCalendar();
+    }
 
-        // Функции работы с данными
-        function loadSavedData() {
-            const savedData = localStorage.getItem('repairCalls');
-            return savedData ? JSON.parse(savedData) : [];
+    // Функции работы с данными
+    function loadSavedData() {
+        const savedData = localStorage.getItem('repairCalls');
+        return savedData ? JSON.parse(savedData) : [];
+    }
+    
+    function saveDataToLocalStorage() {
+        localStorage.setItem('repairCalls', JSON.stringify(callsData));
+        showNotification('Данные успешно сохранены!', 'success');
+        updateCalendar();
+    }
+    
+    function addCall(date, phone, master, source, works) {
+        const newCall = { date, phone, master, source, works };
+        callsData.unshift(newCall);
+        renderCall(newCall, callsData.length - 1);
+        updateStats();
+        updateCalendar();
+    }
+    
+    function renderAllCalls() {
+        $('#calls-table tbody').empty();
+        callsData.forEach((call, index) => renderCall(call, index));
+        filterCallsByDate(formatDate(selectedDate));
+    }
+    
+    function renderCall(call, index) {
+        $('#calls-table tbody').prepend(`
+            <tr data-index="${index}">
+                <td>${call.date}</td>
+                <td>${call.phone}</td>
+                <td>${call.master}</td>
+                <td>${call.source}</td>
+                <td>${call.works}</td>
+                <td class="actions-cell">
+                    <button class="action-btn delete-btn" data-index="${index}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    }
+    
+    function clearForm() {
+        $('#call-form')[0].reset();
+        $('#date').val(formatDate(new Date()));
+        showNotification('Форма очищена', 'info');
+    }
+    
+    function deleteCall(index) {
+        callsData.splice(index, 1);
+        saveDataToLocalStorage();
+        renderAllCalls();
+        updateStats();
+        updateCalendar();
+        showNotification('Запись успешно удалена', 'success');
+    }
+    
+    // Функции статистики
+    function updateStats() {
+        const todayStr = formatDate(new Date());
+        const selectedDateStr = formatDate(selectedDate);
+        
+        const todayCalls = callsData.filter(call => call.date === todayStr).length;
+        const selectedDateCalls = callsData.filter(call => call.date === selectedDateStr).length;
+        
+        $('#today-calls').text(todayCalls);
+        $('#total-calls').text(callsData.length);
+        $('#selected-date').text(selectedDateStr === todayStr ? 'сегодня' : selectedDateStr);
+    }
+    
+    function updateCurrentDateDisplay() {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        $('#current-date').text(new Date().toLocaleDateString('ru-RU', options));
+    }
+    
+    function updateSelectedDateDisplay() {
+        const selectedDateStr = formatDate(selectedDate);
+        const todayStr = formatDate(new Date());
+        $('#selected-date').text(selectedDateStr === todayStr ? 'сегодня' : selectedDateStr);
+    }
+    
+    // Функции календаря
+    function initCalendar() {
+        renderCalendar();
+        updateCalendar();
+    }
+    
+    function renderCalendar() {
+        const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+                          "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+        const currentMonth = selectedDate.getMonth();
+        const currentYear = selectedDate.getFullYear();
+        
+        $('#current-month').text(`${monthNames[currentMonth]} ${currentYear}`);
+        
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        
+        let calendarHTML = '';
+        
+        // Пустые ячейки перед первым днем месяца
+        for (let i = 0; i < startDay; i++) {
+            calendarHTML += '<div class="calendar-day"></div>';
         }
         
-        function saveDataToLocalStorage() {
-            localStorage.setItem('repairCalls', JSON.stringify(callsData));
-            showNotification('Данные успешно сохранены!', 'success');
-            updateCalendar();
-        }
-        
-        function addCall(date, phone, master, source, works) {
-            const newCall = { date, phone, master, source, works };
-            callsData.unshift(newCall);
-            renderCall(newCall, callsData.length - 1);
-            updateStats();
-            updateCalendar();
-        }
-        
-        function renderAllCalls() {
-            $('#calls-table tbody').empty();
-            callsData.forEach((call, index) => renderCall(call, index));
-            filterCallsByDate(formatDate(selectedDate));
-        }
-        
-        function renderCall(call, index) {
-            $('#calls-table tbody').prepend(`
-                <tr data-index="${index}">
-                    <td>${call.date}</td>
-                    <td>${call.phone}</td>
-                    <td>${call.master}</td>
-                    <td>${call.source}</td>
-                    <td>${call.works}</td>
-                    <td class="actions-cell">
-                        <button class="action-btn delete-btn" data-index="${index}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                </tr>
-            `);
-        }
-        
-        function clearForm() {
-            $('#call-form')[0].reset();
-            $('#date').val(formatDate(today));
-            showNotification('Форма очищена', 'info');
-        }
-        
-        function deleteCall(index) {
-            callsData.splice(index, 1);
-            saveDataToLocalStorage();
-            renderAllCalls();
-            updateStats();
-            updateCalendar();
-            showNotification('Запись успешно удалена', 'success');
-        }
-        
-        // Функции статистики
-        function updateStats() {
-            const todayStr = formatDate(today);
-            const selectedDateStr = formatDate(selectedDate);
+        // Дни месяца
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayDate = new Date(currentYear, currentMonth, i);
+            const dateStr = formatDate(dayDate);
+            const isToday = dateStr === formatDate(new Date());
+            const isSelected = dateStr === formatDate(selectedDate);
+            const hasData = callsData.some(call => call.date === dateStr);
             
-            const todayCalls = callsData.filter(call => call.date === todayStr).length;
-            const selectedDateCalls = callsData.filter(call => call.date === selectedDateStr).length;
+            let dayClass = 'calendar-day';
+            if (isToday) dayClass += ' today';
+            if (hasData) dayClass += ' has-data';
+            if (isSelected) dayClass += ' selected';
             
-            $('#today-calls').text(todayCalls);
-            $('#total-calls').text(callsData.length);
-            $('#selected-date').text(selectedDateStr === formatDate(today) ? 'сегодня' : selectedDateStr);
+            calendarHTML += `<div class="${dayClass}" data-date="${dateStr}">${i}</div>`;
         }
         
-        function updateCurrentDateDisplay() {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            $('#current-date').text(today.toLocaleDateString('ru-RU', options));
-        }
+        $('#calendar-days').html(calendarHTML);
         
-        function updateSelectedDateDisplay() {
-            const selectedDateStr = formatDate(selectedDate);
-            $('#selected-date').text(selectedDateStr === formatDate(today) ? 'сегодня' : selectedDateStr);
-        }
-        
-        // Функции календаря
-        function initCalendar() {
+        // Обработка кликов по дням
+        $('.calendar-day[data-date]').click(function() {
+            const dateStr = $(this).data('date');
+            selectedDate = new Date(dateStr);
+            updateSelectedDateDisplay();
+            filterCallsByDate(dateStr);
             renderCalendar();
-            updateCalendar();
-        }
-        
-        function renderCalendar() {
-            const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-                              "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
-            const currentMonth = selectedDate.getMonth();
-            const currentYear = selectedDate.getFullYear();
+        });
+    }
+    
+    function updateCalendar() {
+        const datesWithData = [...new Set(callsData.map(call => call.date))];
+        $('.calendar-day').each(function() {
+            const dateStr = $(this).data('date');
+            $(this).toggleClass('has-data', datesWithData.includes(dateStr));
+        });
+    }
+    
+    function filterCallsByDate(dateStr) {
+        $('#calls-table tbody tr').each(function() {
+            const rowDate = $(this).find('td:first').text();
+            $(this).toggle(rowDate === dateStr);
+        });
+        updateStats();
+    }
+    
+    // Вспомогательные функции
+    function formatDate(date) {
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function showNotification(message, type) {
+        console.log(`[${type}] ${message}`);
+        // Здесь можно добавить отображение уведомлений в интерфейсе
+    }
+
+    // Обработчики событий
+    $(document).ready(function() {
+        // Проверяем авторизацию при загрузке
+        checkAuth();
+
+        // Обработка входа
+        $('#login-form').on('submit', async function(e) {
+            e.preventDefault();
+            const email = $('#login-email').val();
+            const password = $('#login-password').val();
             
-            $('#current-month').text(`${monthNames[currentMonth]} ${currentYear}`);
+            $('#auth-error').hide().text('');
             
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-            
-            let calendarHTML = '';
-            
-            // Пустые ячейки перед первым днем месяца
-            for (let i = 0; i < startDay; i++) {
-                calendarHTML += '<div class="calendar-day"></div>';
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                $('#auth-error').text(error.message).show();
+            } else {
+                checkAuth();
             }
+        });
+
+        // Переход к регистрации
+        $('#signup-link').click(function(e) {
+            e.preventDefault();
+            $('#auth-modal').hide();
+            $('#register-modal').show();
+            $('#register-error').hide();
+        });
+
+        // Возврат ко входу
+        $('#back-to-login').click(function(e) {
+            e.preventDefault();
+            $('#register-modal').hide();
+            $('#auth-modal').show();
+            $('#auth-error').hide();
+        });
+
+        // Обработка регистрации
+        $('#register-form').on('submit', async function(e) {
+            e.preventDefault();
+            const email = $('#register-email').val();
+            const password = $('#register-password').val();
             
-            // Дни месяца
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayDate = new Date(currentYear, currentMonth, i);
-                const dateStr = formatDate(dayDate);
-                const isToday = dateStr === formatDate(today);
-                const isSelected = dateStr === formatDate(selectedDate);
-                const hasData = callsData.some(call => call.date === dateStr);
-                
-                let dayClass = 'calendar-day';
-                if (isToday) dayClass += ' today';
-                if (hasData) dayClass += ' has-data';
-                if (isSelected) dayClass += ' selected';
-                
-                calendarHTML += `<div class="${dayClass}" data-date="${dateStr}">${i}</div>`;
+            $('#register-error').hide().text('');
+            
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                $('#register-error').text(error.message).show();
+            } else {
+                alert('Регистрация успешна! Проверьте ваш email для подтверждения.');
+                $('#register-modal').hide();
+                $('#auth-modal').show();
             }
+        });
+
+        // Сброс пароля
+        $('#reset-password').click(async function(e) {
+            e.preventDefault();
+            const email = $('#login-email').val() || prompt("Введите ваш email:");
             
-            $('#calendar-days').html(calendarHTML);
-            
-            // Обработка кликов по дням
-            $('.calendar-day[data-date]').click(function() {
-                const dateStr = $(this).data('date');
-                selectedDate = new Date(dateStr);
-                updateSelectedDateDisplay();
-                filterCallsByDate(dateStr);
-                renderCalendar();
-            });
-        }
-        
-        function updateCalendar() {
-            const datesWithData = [...new Set(callsData.map(call => call.date))];
-            $('.calendar-day').each(function() {
-                const dateStr = $(this).data('date');
-                $(this).toggleClass('has-data', datesWithData.includes(dateStr));
-            });
-        }
-        
-        function filterCallsByDate(dateStr) {
-            $('#calls-table tbody tr').each(function() {
-                const rowDate = $(this).find('td:first').text();
-                $(this).toggle(rowDate === dateStr);
-            });
-            updateStats();
-        }
-        
+            if (email) {
+                const { error } = await supabase.auth.resetPasswordForEmail(email);
+                if (error) {
+                    alert('Ошибка: ' + error.message);
+                } else {
+                    alert('Письмо для сброса пароля отправлено! Проверьте ваш email.');
+                }
+            }
+        });
+
+        // Выход из системы
+        $('#logout-btn').click(async function(e) {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            checkAuth();
+        });
+
         // Модальное окно сохранения
         $('#save-data').click(function() {
             $('#save-modal').addClass('active');
@@ -968,13 +1143,13 @@
             const ws = XLSX.utils.json_to_sheet(callsData);
             XLSX.utils.book_append_sheet(wb, ws, 'Вызовы');
             
-            const dateStr = formatDate(today);
+            const dateStr = formatDate(new Date());
             XLSX.writeFile(wb, `Вызовы_мастеров_${dateStr}.xlsx`);
             
             showNotification('Экспорт в Excel выполнен', 'success');
         });
         
-        // Обработка формы
+        // Обработка формы добавления вызова
         $('#call-form').on('submit', function(e) {
             e.preventDefault();
             
@@ -991,7 +1166,7 @@
             
             addCall(date, phone, master, source, works);
             $(this).trigger('reset');
-            $('#date').val(formatDate(today));
+            $('#date').val(formatDate(new Date()));
             showNotification('Вызов успешно добавлен', 'success');
         });
         
@@ -1005,80 +1180,12 @@
             selectedDate.setMonth(selectedDate.getMonth() + 1);
             renderCalendar();
         });
-        
-        // Вспомогательные функции
-        function showNotification(message, type) {
-            console.log(`[${type}] ${message}`);
-        }
-    }
 
-    // Обработка формы входа
-    $('#login-form').on('submit', async function(e) {
-        e.preventDefault();
-        const email = $('#login-email').val();
-        const password = $('#login-password').val();
-        
-        $('#auth-error').hide();
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            $('#auth-error').text(error.message).show();
-        } else {
-            checkAuth(); // Обновляем состояние
-        }
-    });
-
-    // Сброс пароля
-    $('#reset-password').click(async function(e) {
-        e.preventDefault();
-        const email = prompt("Введите ваш email для сброса пароля:");
-        if (email) {
-            const { error } = await supabase.auth.resetPasswordForEmail(email);
-            if (error) {
-                alert('Ошибка: ' + error.message);
-            } else {
-                alert('Письмо для сброса пароля отправлено! Проверьте ваш email.');
-            }
-        }
-    });
-
-    // Регистрация нового пользователя
-    $('#signup-link').click(async function(e) {
-        e.preventDefault();
-        const email = prompt("Введите email для регистрации:");
-        const password = prompt("Введите пароль:");
-        
-        if (email && password) {
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password
-            });
-            
-            if (error) {
-                alert('Ошибка регистрации: ' + error.message);
-            } else {
-                alert('Подтвердите email! Письмо отправлено.');
-            }
-        }
-    });
-
-    // Выход из системы
-    $('#logout-btn').click(async function() {
-        await supabase.auth.signOut();
-        checkAuth();
-    });
-
-    // Проверяем авторизацию при загрузке страницы
-    $(document).ready(function() {
-        checkAuth();
-        
         // Следим за изменениями состояния авторизации
         supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_OUT') {
+            if (event === 'SIGNED_IN') {
+                checkAuth();
+            } else if (event === 'SIGNED_OUT') {
                 checkAuth();
             }
         });
