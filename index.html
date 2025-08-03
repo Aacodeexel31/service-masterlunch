@@ -770,7 +770,7 @@
     </div>
 
     <script>
-    // Инициализация Supabase
+    // Инициализация Supabase (первая строка скрипта)
     const supabaseUrl = 'https://cfgbmkpoqzufzlxeiqug.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmZ2Jta3BvcXp1ZnpseGVpcXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYzODcsImV4cCI6MjA2OTc0MjM4N30.XphXZSWA3MwrFDISUigXtOwo2HcU4XInpseQexz7cnc';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -811,17 +811,17 @@
         $('#register-modal').hide();
     }
 
-    // Форматирование даты
-    function formatDate(date) {
-        const d = new Date(date);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
     // Инициализация основного приложения
     function initApp() {
+        // Форматирование даты
+        const formatDate = (date) => {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
         // Текущая дата
         const today = new Date();
         
